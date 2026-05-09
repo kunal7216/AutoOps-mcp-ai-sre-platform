@@ -1,114 +1,214 @@
-# AutoOps X — Autonomous Reliability Control Plane (v2)
+# AutoOps — Autonomous Reliability Control Plane
 
-1. Overview
+![Java](https://img.shields.io/badge/Java-21-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen) ![Postgres](https://img.shields.io/badge/Postgres-DB-blue) ![Kafka](https://img.shields.io/badge/Kafka-Event%20Streaming-black) ![Redis](https://img.shields.io/badge/Redis-Cache-red) ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
 
-AutoOps X is an autonomous reliability control plane that detects incidents, reasons about root causes, retrieves historical reliability memory, plans safe remediation, executes approved tools, validates recovery, and continuously improves through replay-based evaluation.
+## 1. Overview
+AutoOps is an autonomous reliability control plane that detects production incidents, retrieves historical incident memory, plans safe remediation, executes approved tools, validates recovery, and continuously improves via replay-based evaluation. It is engineered for production safety: policy, approval, rollback, idempotency, and observability are first-class.
 
-2. Problem Statement
+## 2. Problem Statement
+Modern distributed systems suffer from latency spikes, cache saturation, deployment regressions and dependency failures. Manual remediation is slow and risky; naive automation can worsen outages. Teams need a disciplined control plane that reasons about incidents, enforces safety, and learns from history.
 
-Production systems face failures (latency spikes, cache saturation, deployment regressions) where manual response increases MTTR and risky automated actions can cause outages. AutoOps X reduces risk by combining incident intelligence, policy controls, and safe execution.
+## 3. Solution
+AutoOps ingests telemetry and incidents, uses RAG + Reliability Memory Graph to provide planner context, applies a Policy Engine (RBAC, risk-scoring, approval gating), executes approved MCP-style tools via a safety layer (dry-run/rollback support), validates outcomes, and records memory for replay evaluation.
 
-3. Solution
+## 4. Key Features
+- Planner / Executor / Validator agent pipeline
+- Reliability Memory Graph (service → incident → root cause → action → outcome)
+- RAG-based incident intelligence (runbooks, RCA, embeddings)
+- Policy Engine, approval workflow, and Tool Execution Safety Layer
+- Dry-run, idempotency keys, rollback checkpoints, audit logs
+- OpenTelemetry hooks & Grafana-ready metrics
+- Flyway migrations + Testcontainers integration
 
-AutoOps X ingests telemetry, detects incidents, uses RAG + Reliability Memory Graph to inform planning, runs policy checks and approvals, executes via MCP tool layer, validates outcome, and records memories for future decisions.
+## 5. System Architecture
+Insert architecture diagram below (Mermaid). This shows high-level data and control flow.
 
-4. Key Features
-- Incident detection and classification
-- RAG-based incident intelligence and runbook retrieval
-- Reliability Memory Graph (graph of services, incidents, root causes, actions, outcomes)
-- Policy Engine with approval gates and risk scoring
-- Tool Execution Safety Layer and approval workflow
-- Validator agent and replay-based evaluation
-- Observability (OpenTelemetry/Grafana)
-
-5. System Architecture
-
+```mermaid
+flowchart TD
+  A[Telemetry / Metrics / Alerts] --> B(Incident Detection)
+  B --> C{Incident Intelligence}
+  C -->|RAG / Runbooks| D[Reliability Memory Graph]
+  C -->|Embeddings| E[Incident Knowledge Repo]
+  D --> F[Planner Agent]
+  F --> G[Policy Engine]
+  G -->|approved| H[Executor / MCP Tool Layer]
+  G -->|needs approval| I[Approval Workflow]
+  H --> J[Validator Agent]
+  J --> K[Audit & Observability]
+  K --> L[Replay Evaluation]
+  L --> D
+  style A fill:#f9f,stroke:#333,stroke-width:1px
+  style D fill:#efe,stroke:#333,stroke-width:1px
+  style L fill:#eef,stroke:#333,stroke-width:1px
 ```
-Telemetry / Events -> Incident Detection -> Incident Intelligence (RAG)
- -> Reliability Memory Graph -> Planner -> Policy Engine -> Executor -> Validator
- -> Audit + Observability -> Replay Evaluation
+
+Short explanation:
+- Incident Detection consumes telemetry and signals potential incidents.
+- Incident Intelligence (RAG + memory) augments the planner with historical context and runbooks.
+- Policy Engine enforces RBAC, risk scoring and decides approval requirements.
+- Executor runs MCP-style tools through a safety layer; Validator confirms recovery and records outcome.
+- Replay Evaluation feeds results back into the Reliability Memory Graph for continuous improvement.
+
+## 6. Workflow
+Mermaid sequence/flow that highlights decision points and validation.
+
+```mermaid
+sequenceDiagram
+  participant S as Source (Monitoring)
+  participant API as API
+  participant P as Planner
+  participant M as Memory/RAG
+  participant Pol as Policy Engine
+  participant U as User/Approver
+  participant Ex as Executor
+  participant V as Validator
+  participant DB as Audit/DB
+
+  S->>API: incident.report(payload)
+  API->>M: buildMemoryContext(incident)
+  API->>P: plan(incident, memoryContext)
+  P->>Pol: evaluate(plan)
+  alt requires approval
+    Pol-->>U: requestApproval(plan)
+    U-->>Pol: approve/deny
+  end
+  Pol->>Ex: executeIfAllowed(plan)
+  Ex->>V: run and report outcome
+  V->>DB: persist(outcome, audit)
+  DB-->>M: updateMemory(outcome)
+  V->>API: notify(status)
 ```
 
-6. Workflow
+Notes:
+- Approval is a synchronous gate in this simplified flow; in production it may be asynchronous with callbacks.
+- The memory/RAG step is used to bias the planner toward historically safe actions.
 
-1. Telemetry/ingest
-2. Incident detection
-3. Build memory + RAG context
-4. Planner proposes actions
-5. Policy Engine decides APPROVED / APPROVAL_REQUIRED / DENIED
-6. Approval workflow (if required)
-7. Executor runs MCP tool (safe execution)
-8. Validator verifies recovery and records outcome
-9. Replay evaluates decision quality
+## 7. Tech Stack
+Java 21, Spring Boot, Spring Data JPA, PostgreSQL, Flyway, Kafka, Redis, OpenTelemetry, Grafana, Docker, Maven, JUnit, Testcontainers. Optional: pgvector / vector DB for embeddings.
 
-7. Tech Stack
-- Java, Spring Boot
-- PostgreSQL (Flyway migrations), H2 for tests
-- Kafka for events (scaffold)
-- Redis for state/cache (scaffold)
-- OpenTelemetry, Grafana for observability
-- Docker, Kubernetes-ready
+## 8. Project Modules
+- api: controllers & OpenAPI
+- incident-service: ingestion + detection
+- planner: plan generation
+- intel: RAG, embeddings, runbooks
+- memory: Reliability Memory Graph and repos
+- policy: Policy Engine and risk scoring
+- executor: MCP tool adapters & safety layer
+- validator: recovery validation
+- replay: evaluation & scoring
+- chaos: simulation scaffolds
 
-8. Project Modules
-- incident-service: ingest + detection
-- intel: RAG, embeddings, knowledge repo
-- memory: Reliability Memory Graph entities + service
-- planner: Planner Agent
-- policy: Policy Engine
-- executor: Tool execution + safety layer
-- validator: Recovery validator
-- replay: Replay evaluation and chaos simulation
-- api: REST controllers and approval endpoints
+## 9. API Endpoints
+- POST /api/v1/incidents — create & process
+- GET /api/v1/incidents — list
+- GET /api/v1/incidents/{id} — details
+- POST /api/v1/approvals/{id}/approve — approve
 
-9. API Endpoints (examples)
-- POST /api/v1/incidents — create + process incident
-- GET /api/v1/incidents — list incidents
-- GET /api/v1/incidents/{id} — incident details
-- POST /api/v1/approvals/{id}/approve — approve action
+## 10. Database / Entity Relationship
+Mermaid ER diagram showing main nodes and relationships.
 
-10. Database Design (high-level)
-- service_node, incident_node, root_cause_node, remediation_action_node, outcome_node, memory_edge
-- incident_knowledge, runbook, rca_report (for RAG)
+```mermaid
+erDiagram
+    SERVICE_NODE {
+        UUID id PK
+        string service_name
+        string owner_team
+        string environment
+        string criticality
+        float current_slo_target
+        timestamp created_at
+    }
+    INCIDENT_NODE {
+        UUID id PK
+        UUID service_id FK
+        string incident_type
+        string severity
+        timestamp detected_at
+        string status
+        float latency_ms
+        float error_rate
+        int throughput
+        float slo_burn_rate
+        int customer_impact_score
+    }
+    ROOT_CAUSE_NODE {
+        UUID id PK
+        UUID incident_id FK
+        string root_cause_type
+        float confidence_score
+        text evidence
+        string detected_by
+        timestamp created_at
+    }
+    REMEDIATION_ACTION_NODE {
+        UUID id PK
+        UUID incident_id FK
+        string action_type
+        string tool_name
+        float risk_score
+        boolean approval_required
+        string execution_status
+        boolean rollback_available
+        timestamp created_at
+    }
+    OUTCOME_NODE {
+        UUID id PK
+        UUID incident_id FK
+        UUID action_id FK
+        boolean success
+        int mttr_seconds
+        float latency_improvement_percent
+        float error_rate_improvement_percent
+        boolean rollback_triggered
+        text notes
+    }
+    MEMORY_EDGE {
+        UUID id PK
+        string source_type
+        UUID source_id
+        string target_type
+        UUID target_id
+        string relation_type
+        float weight
+        timestamp created_at
+    }
 
-11. Kafka / Redis / MCP / RAG Usage
-- Kafka: event bus for telemetry and incident events
-- Redis: ephemeral workflow state and caches
-- MCP: tool interface for safe remediation tools
-- RAG: retrieve similar incidents, runbooks, RCA reports for planner context
+    SERVICE_NODE ||--o{ INCIDENT_NODE : "HAS_INCIDENT"
+    INCIDENT_NODE ||--o{ ROOT_CAUSE_NODE : "HAS_ROOT_CAUSE"
+    INCIDENT_NODE ||--o{ REMEDIATION_ACTION_NODE : "USED_ACTION"
+    REMEDIATION_ACTION_NODE ||--o{ OUTCOME_NODE : "PRODUCED_OUTCOME"
+    ROOT_CAUSE_NODE ||--o{ MEMORY_EDGE : "SIMILAR_TO"
+    INCIDENT_NODE ||--o{ MEMORY_EDGE : "SIMILAR_TO"
+```
 
-12. Safety and Reliability Design
-- RBAC and tool allowlists
-- Risk scoring and approval gates
-- Dry-run / validate before committing irreversible changes
-- Rollback availability and idempotent operations
+Short explanation:
+- The ER diagram models the graph-like memory using node tables and memory edges. Query patterns include: find similar incidents by root cause, find successful actions for a root cause, and compute historical risk given prior outcomes.
 
-13. How to Run Locally
+## 11. Safety and Reliability Design
+RBAC, approval gates, dry-run, idempotency keys, rollback checkpoints, immutable audit logs; policy thresholds and mitigation suggestions are central.
 
+## 12. How to Run Locally
+Prereqs: Java 21, Maven, Docker. Quickstart:
 ```bash
 git clone https://github.com/kunal7216/AutoOps--Autonomous-Reliability-Control-Plane.git
 cd AutoOps--Autonomous-Reliability-Control-Plane
 mvn clean package
 mvn spring-boot:run
+# or docker compose up --build
 ```
 
-14. Screenshots / Examples
-- Swagger UI: /swagger-ui.html
-- Actuator endpoints: /actuator
-- Dashboard (Grafana) - link when available
+## 13. Testing
+Unit tests (JUnit + Mockito). Integration tests use Testcontainers (Postgres).
 
-15. Testing
-- Unit tests under src/test
-- Integration: Testcontainers Postgres (requires Docker)
-- Run: mvn test
+## 14. Screenshots
+Mermaid diagrams render in GitHub; add screenshots only for dashboards or UI pages when available.
 
-16. Future Enhancements
-- pgvector/Vector DB for embeddings
-- Persistent approval store and UI
-- Full replay/evaluation pipeline with historical telemetry
-- Kubernetes operator for deployment
+## 15. Future Enhancements
+pgvector/Vector DB, persistent approval UI, full replay/evaluation pipeline, Kubernetes operator, PagerDuty/Jira integration.
 
-17. Resume / Interview Highlights
-- Upgraded v1 → v2: Reliability Control Plane
-- Added Memory Graph, RAG scaffolding, Policy & Safety layers
-- Flyway migrations and integration test scaffolding
+## 16. Resume / Interview Highlights
+- Upgraded to AutoOps X v2 with Reliability Memory Graph, RAG scaffolding, policy & safety layers, and replay evaluation scaffolds.
 
+---
+
+*Mermaid diagrams are embedded above. They render on GitHub automatically.*
