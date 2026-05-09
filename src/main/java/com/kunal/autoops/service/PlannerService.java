@@ -16,11 +16,15 @@ public class PlannerService {
     private final IncidentRepository incidentRepository;
     private final RiskScoringService riskScoringService;
     private final AuditService auditService;
+    private final com.kunal.autoops.memory.ReliabilityMemoryGraphService reliabilityMemoryGraphService;
+    private final com.kunal.autoops.intel.IncidentIntelligenceService incidentIntelligenceService;
 
-    public PlannerService(IncidentRepository incidentRepository, RiskScoringService riskScoringService, AuditService auditService) {
+    public PlannerService(IncidentRepository incidentRepository, RiskScoringService riskScoringService, AuditService auditService, com.kunal.autoops.memory.ReliabilityMemoryGraphService reliabilityMemoryGraphService, com.kunal.autoops.intel.IncidentIntelligenceService incidentIntelligenceService) {
         this.incidentRepository = incidentRepository;
         this.riskScoringService = riskScoringService;
         this.auditService = auditService;
+        this.reliabilityMemoryGraphService = reliabilityMemoryGraphService;
+        this.incidentIntelligenceService = incidentIntelligenceService;
     }
 
     public PlanResponse plan(Long incidentId) {
@@ -32,8 +36,12 @@ public class PlannerService {
         incident.setStatus(risk >= 0.75 ? IncidentStatus.APPROVAL_REQUIRED : IncidentStatus.PLANNED);
         incidentRepository.save(incident);
 
+        // Build memory and RAG context (feature-flag guarded elsewhere)
+        String memoryContext = reliabilityMemoryGraphService.buildMemoryContextForPlanner(incident);
+        String ragContext = incidentIntelligenceService.buildContextForPlanner(incident);
+
         List<RemediationTool> tools = recommendTools(incident);
-        String rationale = buildRationale(incident, risk, tools);
+        String rationale = buildRationale(incident, risk, tools) + "; memoryContext=" + memoryContext + "; ragContext=" + ragContext;
         auditService.record(incident.getId(), "PLAN_CREATED", "PLANNER_AGENT", incident.getTraceId(), rationale);
 
         return new PlanResponse(incident.getId(), incident.getIncidentType(), risk, tools, rationale, incident.getTraceId());

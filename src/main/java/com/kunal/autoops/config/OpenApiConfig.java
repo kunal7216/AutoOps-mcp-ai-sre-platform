@@ -10,8 +10,8 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI autoOpsApi() {
         return new OpenAPI().info(new Info()
-                .title("AutoOps MCP API")
-                .version("1.0.0")
-                .description("MCP-Based AI SRE Platform for safe incident recovery workflows."));
+                .title("AutoOps X API")
+                .version("2.0.0")
+                .description("AutoOps X — Autonomous Reliability Control Plane: detects incidents, retrieves historical memory, plans safe remediation, and evaluates recovery."));
     }
 }
