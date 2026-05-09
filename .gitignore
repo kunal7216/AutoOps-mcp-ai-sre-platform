@@ -1,3 +1,4 @@
 
 
-# Ignore build output\ntarget/
+# Ignore build output
+build/
