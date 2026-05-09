@@ -1,6 +1,6 @@
-# AutoOps -- MCP-Based AI SRE Platform
+# AutoOps X — Autonomous Reliability Control Plane (v2)
 
-AutoOps is a Spring Boot project that simulates a secure multi-agent incident recovery platform.
+AutoOps X is an autonomous reliability control plane that detects production incidents, retrieves historical reliability memory, plans safe remediation, executes approved tools, validates recovery, and continuously improves through replay-based evaluation.
 It demonstrates MCP-style tool interfaces, policy-constrained remediation, RBAC, risk scoring,
 OpenTelemetry-style trace IDs, audit logs, MTTR tracking, and recovery validation.
 
