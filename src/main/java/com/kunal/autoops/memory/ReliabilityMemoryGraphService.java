@@ -54,7 +54,7 @@ public class ReliabilityMemoryGraphService {
         StringBuilder sb = new StringBuilder();
         sb.append("service=").append(serviceName);
         serviceRepo.findByServiceName(serviceName).ifPresent(s -> sb.append(";serviceId=").append(s.getId()));
-        long incidentCount = incidentRepo.findAll().stream().filter(i -> incident.getServiceName() != null && incident.getServiceName().equals(i.getServiceName())).count();
+        long incidentCount = incidentRepo.findAll().stream().filter(in -> in.getIncidentType() != null && in.getIncidentType().equals(incident.getIncidentType())).count();
         sb.append(";historicalIncidents=").append(incidentCount);
         return sb.toString();
     }
