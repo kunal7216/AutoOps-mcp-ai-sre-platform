@@ -23,19 +23,22 @@ public class ToolExecutionService {
     private final PolicyEngine policyEngine;
     private final McpRemediationToolServer toolServer;
     private final AuditService auditService;
+    private final com.kunal.autoops.safety.ToolExecutionSafetyLayer safetyLayer;
 
     public ToolExecutionService(IncidentRepository incidentRepository,
                                 RemediationActionRepository actionRepository,
                                 RiskScoringService riskScoringService,
                                 PolicyEngine policyEngine,
                                 McpRemediationToolServer toolServer,
-                                AuditService auditService) {
+                                AuditService auditService,
+                                com.kunal.autoops.safety.ToolExecutionSafetyLayer safetyLayer) {
         this.incidentRepository = incidentRepository;
         this.actionRepository = actionRepository;
         this.riskScoringService = riskScoringService;
         this.policyEngine = policyEngine;
         this.toolServer = toolServer;
         this.auditService = auditService;
+        this.safetyLayer = safetyLayer;
     }
 
     public ToolExecutionResponse execute(Long incidentId, ToolExecutionRequest request, String role) {
@@ -67,6 +70,18 @@ public class ToolExecutionService {
         action.setReason(decision.reason());
         actionRepository.save(action);
         auditService.record(incidentId, "TOOL_APPROVED", "POLICY_ENGINE", incident.getTraceId(), decision.reason());
+
+        // Safety layer: may request approval for high-risk actions
+        com.kunal.autoops.safety.ToolExecutionSafetyLayer.SafetyDecision sd = safetyLayer.evaluate(incident, action);
+        if (!sd.isAllowed()) {
+            action.setStatus(ToolExecutionStatus.REQUESTED);
+            action.setReason(sd.getMessage());
+            actionRepository.save(action);
+            auditService.record(incidentId, "TOOL_AWAITING_APPROVAL", "SAFETY_LAYER", incident.getTraceId(), sd.getMessage());
+            incident.setStatus(IncidentStatus.BLOCKED);
+            incidentRepository.save(incident);
+            return new ToolExecutionResponse(action.getId(), incidentId, request.getTool(), action.getStatus(), risk, sd.getMessage(), null, incident.getTraceId());
+        }
 
         incident.setStatus(IncidentStatus.EXECUTING);
         incidentRepository.save(incident);
