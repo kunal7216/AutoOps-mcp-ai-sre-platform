@@ -18,6 +18,12 @@ C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\enums\Remedi
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\enums\ToolExecutionStatus.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\exception\GlobalExceptionHandler.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\exception\ResourceNotFoundException.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\IncidentEmbeddingService.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\IncidentIntelligenceService.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\IncidentKnowledge.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\IncidentKnowledgeRepository.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\Runbook.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\intel\RunbookRepository.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\memory\IncidentNode.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\memory\IncidentNodeRepository.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\memory\MemoryEdge.java
