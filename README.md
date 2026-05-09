@@ -1,314 +1,114 @@
-AutoOps — MCP-Based AI SRE Platform
-AutoOps is a production-style AI SRE automation platform built with Java, Spring Boot, MCP-style tool interfaces, Kafka-style workflows, RBAC, risk scoring, audit logging, OpenTelemetry-style trace IDs, SLO tracking, MTTR analysis, and recovery validation.
-The project simulates how an enterprise reliability platform can use AI agents to detect service failures, classify incidents, plan remediation actions, execute approved recovery tools, and validate outcomes safely.
----
-Table of Contents
-Project Overview
-Problem Statement
-Core Idea
-Key Features
-Architecture
-System Workflow
-MCP Tool Layer
-Policy Engine
-Risk Scoring
-Audit Logging
-OpenTelemetry-Style Tracing
-Tech Stack
-Project Structure
-API Endpoints
-Running Locally
-Running with Docker
-Swagger UI
-Future Enhancements
-Interview Talking Points
----
-Project Overview
-AutoOps demonstrates a safe agentic runtime for SRE workflows. In modern distributed systems, incidents such as service crashes, latency spikes, cache failures, traffic overload, and deployment regressions require quick diagnosis and careful remediation.
-AI agents can speed up incident response, but unrestricted AI-driven remediation is unsafe. AutoOps solves this by routing all agent actions through controlled MCP-style tools and policy checks.
-The current system supports:
-Incident creation
-Agent-based remediation planning
-Policy-constrained execution
-MCP-style remediation tools
-Audit logs
-Trace IDs
-Recovery validation
-Dashboard metrics
----
-Problem Statement
-Production systems fail in many ways:
-Services become unhealthy
-Latency spikes under load
-Cache layers degrade
-Deployments require rollback
-Error rates increase suddenly
-Dependencies become slow
-Manual response increases MTTR
-A naive AI agent might suggest dangerous actions like restarting a critical service or modifying infrastructure without validation. AutoOps prevents this by introducing:
-RBAC
-Risk scoring
-Approval gates
-Tool allowlists
-Rollback checks
-Audit trails
-Validation after execution
----
-Core Idea
-AutoOps follows this design principle:
-> AI agents can recommend actions, but only approved tools can execute actions.
-The system separates reasoning from execution:
-```text
-Incident → Planner Agent → Policy Engine → MCP Tool Server → Validator → Audit Log
+# AutoOps X — Autonomous Reliability Control Plane (v2)
+
+1. Overview
+
+AutoOps X is an autonomous reliability control plane that detects incidents, reasons about root causes, retrieves historical reliability memory, plans safe remediation, executes approved tools, validates recovery, and continuously improves through replay-based evaluation.
+
+2. Problem Statement
+
+Production systems face failures (latency spikes, cache saturation, deployment regressions) where manual response increases MTTR and risky automated actions can cause outages. AutoOps X reduces risk by combining incident intelligence, policy controls, and safe execution.
+
+3. Solution
+
+AutoOps X ingests telemetry, detects incidents, uses RAG + Reliability Memory Graph to inform planning, runs policy checks and approvals, executes via MCP tool layer, validates outcome, and records memories for future decisions.
+
+4. Key Features
+- Incident detection and classification
+- RAG-based incident intelligence and runbook retrieval
+- Reliability Memory Graph (graph of services, incidents, root causes, actions, outcomes)
+- Policy Engine with approval gates and risk scoring
+- Tool Execution Safety Layer and approval workflow
+- Validator agent and replay-based evaluation
+- Observability (OpenTelemetry/Grafana)
+
+5. System Architecture
+
 ```
-This mirrors enterprise-grade AI platform design where governance, safety, and observability are required before autonomous actions are trusted.
----
-Key Features
-1. Incident Management
-Users can create incidents using REST APIs. Each incident stores:
-Service name
-Severity
-Description
-Planned action
-Policy decision
-Status
-Risk score
-Trace ID
-Created timestamp
-Recovered timestamp
-2. Planner Agent Simulation
-The Planner Agent selects a remediation action based on incident context.
-Example mappings:
-Incident Signal	Planned Action
-Latency spike	Enable adaptive rate limiting
-Cache issue	Clear cache
-Deployment failure	Rollback deployment
-Generic service failure	Restart service
-3. MCP-Style Remediation Tools
-The project exposes tool-like remediation operations such as:
-`restart_service`
-`rollback_deployment`
-`scale_service`
-`clear_cache`
-`enable_adaptive_rate_limit`
-`health_check`
-`validate_recovery`
-4. Policy-Constrained Tool Execution
-Before executing a tool, the Policy Engine checks:
-Service criticality
-Severity
-Risk score
-Restricted services
-Approval requirement
-Allowed actions
-5. Audit Logs
-Every planning, policy, execution, and validation event is logged with:
-Actor
-Action
-Decision
-Details
-Incident ID
-Trace ID
-Timestamp
-6. Dashboard Metrics
-The dashboard summarizes:
-Total incidents
-Recovered incidents
-Approval-required incidents
-MTTR-related signals
-Recovery success status
----
-Architecture
-```text
-Client / Swagger
-      |
-      v
-Incident Controller
-      |
-      v
-Incident Service
-      |
-      +--> Planner Agent
-      |
-      +--> Policy Engine
-      |
-      +--> MCP Tool Service
-      |
-      +--> Recovery Validator
-      |
-      +--> Audit Log Repository
-      |
-      v
-Dashboard Metrics
+Telemetry / Events -> Incident Detection -> Incident Intelligence (RAG)
+ -> Reliability Memory Graph -> Planner -> Policy Engine -> Executor -> Validator
+ -> Audit + Observability -> Replay Evaluation
 ```
----
-System Workflow
-```text
-1. Incident is created through REST API
-2. Planner Agent classifies the incident
-3. A remediation tool is selected
-4. Policy Engine calculates risk
-5. Action is approved, denied, or marked for approval
-6. MCP Tool Service executes approved action
-7. Recovery is validated
-8. Audit logs and dashboard metrics are updated
-```
----
-MCP Tool Layer
-MCP-style tools provide a standard interface between agents and backend operations. The important design point is that agents do not directly execute infrastructure actions.
-Example:
-```text
-Agent requests: restart_service(payment-service)
-Policy checks: RBAC + risk + rollback safety
-Execution result: Approved / Denied / Approval Required
-Audit log: Stored with trace ID
-```
-This pattern demonstrates safe tool orchestration for agentic AI systems.
----
-Policy Engine
-The Policy Engine returns one of three decisions:
-Decision	Meaning
-`APPROVED`	Tool can be executed automatically
-`APPROVAL_REQUIRED`	Human approval is required
-`DENIED`	Tool execution is blocked
-Example restricted behavior:
-```text
-Service: database-service
-Severity: HIGH
-Decision: DENIED
-Reason: Direct database remediation is restricted
-```
----
-Risk Scoring
-Risk score is calculated from:
-Incident severity
-Service criticality
-Payment/business context
-Tool type
-Restricted service checks
-Example severity mapping:
-Severity	Base Risk
-CRITICAL	0.90
-HIGH	0.70
-MEDIUM	0.45
-LOW	0.25
----
-Audit Logging
-Audit logs answer:
-Who planned the action?
-Which tool was selected?
-Was the action approved?
-Why was it denied or escalated?
-Was recovery successful?
-Which trace ID connects the full incident flow?
-Example audit event:
-```json
-{
-  "actor": "PolicyEngine",
-  "action": "CHECK_POLICY",
-  "decision": "APPROVED",
-  "details": "Risk score below approval threshold",
-  "traceId": "8f9c7d..."
-}
-```
----
-OpenTelemetry-Style Tracing
-Each incident gets a trace ID to correlate:
-REST request
-Planner decision
-Policy decision
-Tool execution
-Recovery validation
-Audit log records
-This demonstrates observability thinking similar to OpenTelemetry-based production systems.
----
-Tech Stack
-Category	Technology
-Language	Java 17
-Framework	Spring Boot 3
-API	REST APIs
-Persistence	Spring Data JPA
-Database	H2 / PostgreSQL-ready structure
-API Docs	Swagger / Springdoc OpenAPI
-Monitoring	Spring Boot Actuator
-Architecture	MCP-style tool layer, AI agents, policy engine
-DevOps	Docker, Docker Compose
----
-Project Structure
-```text
-autoops-mcp-ai-sre-platform/
-├── pom.xml
-├── Dockerfile
-├── docker-compose.yml
-├── README.md
-├── .gitignore
-└── src/main/
-    ├── java/com/kunal/autoops/
-    │   ├── AutoOpsApplication.java
-    │   ├── controller/
-    │   ├── dto/
-    │   ├── model/
-    │   ├── repo/
-    │   └── service/
-    └── resources/
-        └── application.properties
-```
----
-API Endpoints
-Method	Endpoint	Description
-POST	`/api/incidents`	Create and process incident
-GET	`/api/incidents`	Fetch all incidents
-GET	`/api/incidents/{id}/audit`	Fetch audit logs
-GET	`/api/dashboard`	Fetch dashboard summary
----
-Running Locally
+
+6. Workflow
+
+1. Telemetry/ingest
+2. Incident detection
+3. Build memory + RAG context
+4. Planner proposes actions
+5. Policy Engine decides APPROVED / APPROVAL_REQUIRED / DENIED
+6. Approval workflow (if required)
+7. Executor runs MCP tool (safe execution)
+8. Validator verifies recovery and records outcome
+9. Replay evaluates decision quality
+
+7. Tech Stack
+- Java, Spring Boot
+- PostgreSQL (Flyway migrations), H2 for tests
+- Kafka for events (scaffold)
+- Redis for state/cache (scaffold)
+- OpenTelemetry, Grafana for observability
+- Docker, Kubernetes-ready
+
+8. Project Modules
+- incident-service: ingest + detection
+- intel: RAG, embeddings, knowledge repo
+- memory: Reliability Memory Graph entities + service
+- planner: Planner Agent
+- policy: Policy Engine
+- executor: Tool execution + safety layer
+- validator: Recovery validator
+- replay: Replay evaluation and chaos simulation
+- api: REST controllers and approval endpoints
+
+9. API Endpoints (examples)
+- POST /api/v1/incidents — create + process incident
+- GET /api/v1/incidents — list incidents
+- GET /api/v1/incidents/{id} — incident details
+- POST /api/v1/approvals/{id}/approve — approve action
+
+10. Database Design (high-level)
+- service_node, incident_node, root_cause_node, remediation_action_node, outcome_node, memory_edge
+- incident_knowledge, runbook, rca_report (for RAG)
+
+11. Kafka / Redis / MCP / RAG Usage
+- Kafka: event bus for telemetry and incident events
+- Redis: ephemeral workflow state and caches
+- MCP: tool interface for safe remediation tools
+- RAG: retrieve similar incidents, runbooks, RCA reports for planner context
+
+12. Safety and Reliability Design
+- RBAC and tool allowlists
+- Risk scoring and approval gates
+- Dry-run / validate before committing irreversible changes
+- Rollback availability and idempotent operations
+
+13. How to Run Locally
+
 ```bash
-git clone https://github.com/kunal7216/autoops-mcp-ai-sre-platform.git
-cd autoops-mcp-ai-sre-platform
+git clone https://github.com/kunal7216/AutoOps--Autonomous-Reliability-Control-Plane.git
+cd AutoOps--Autonomous-Reliability-Control-Plane
+mvn clean package
 mvn spring-boot:run
 ```
-Application URL:
-```text
-http://localhost:8080
-```
----
-Running with Docker
-```bash
-mvn clean package
-docker build -t autoops-mcp-ai-sre-platform .
-docker run -p 8080:8080 autoops-mcp-ai-sre-platform
-```
-Or:
-```bash
-docker compose up --build
-```
----
-Swagger UI
-```text
-http://localhost:8080/swagger-ui.html
-```
----
-Example Request
-```bash
-curl -X POST http://localhost:8080/api/incidents \
-  -H "Content-Type: application/json" \
-  -d '{
-    "serviceName": "payment-service",
-    "severity": "HIGH",
-    "description": "Latency spike and error burst"
-  }'
-```
----
-Future Enhancements
-Real Kafka topics
-Redis-backed workflow state
-PostgreSQL persistence
-Real OpenTelemetry SDK
-JWT authentication
-Human approval workflow
-Kubernetes remediation tools
-LLM-generated RCA reports
-Grafana dashboard integration
 
-Author
-Kunal Kumar
+14. Screenshots / Examples
+- Swagger UI: /swagger-ui.html
+- Actuator endpoints: /actuator
+- Dashboard (Grafana) - link when available
+
+15. Testing
+- Unit tests under src/test
+- Integration: Testcontainers Postgres (requires Docker)
+- Run: mvn test
+
+16. Future Enhancements
+- pgvector/Vector DB for embeddings
+- Persistent approval store and UI
+- Full replay/evaluation pipeline with historical telemetry
+- Kubernetes operator for deployment
+
+17. Resume / Interview Highlights
+- Upgraded v1 → v2: Reliability Control Plane
+- Added Memory Graph, RAG scaffolding, Policy & Safety layers
+- Flyway migrations and integration test scaffolding
+
