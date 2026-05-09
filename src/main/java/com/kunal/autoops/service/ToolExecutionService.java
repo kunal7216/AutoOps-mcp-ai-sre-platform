@@ -57,13 +57,23 @@ public class ToolExecutionService {
         action.setInputPayload(String.valueOf(request.getParameters()));
 
         if (!decision.approved()) {
-            action.setStatus(ToolExecutionStatus.DENIED);
-            action.setReason(decision.reason());
-            RemediationAction saved = actionRepository.save(action);
-            incident.setStatus(IncidentStatus.BLOCKED);
-            incidentRepository.save(incident);
-            auditService.record(incidentId, "TOOL_DENIED", "POLICY_ENGINE", incident.getTraceId(), decision.reason());
-            return new ToolExecutionResponse(saved.getId(), incidentId, request.getTool(), saved.getStatus(), risk, decision.reason(), null, incident.getTraceId());
+            if (decision.requiresApproval()) {
+                action.setStatus(ToolExecutionStatus.REQUESTED);
+                action.setReason(decision.reason());
+                RemediationAction saved = actionRepository.save(action);
+                incident.setStatus(IncidentStatus.BLOCKED);
+                incidentRepository.save(incident);
+                auditService.record(incidentId, "TOOL_AWAITING_APPROVAL", "POLICY_ENGINE", incident.getTraceId(), decision.reason());
+                return new ToolExecutionResponse(saved.getId(), incidentId, request.getTool(), saved.getStatus(), risk, decision.reason(), null, incident.getTraceId());
+            } else {
+                action.setStatus(ToolExecutionStatus.DENIED);
+                action.setReason(decision.reason());
+                RemediationAction saved = actionRepository.save(action);
+                incident.setStatus(IncidentStatus.BLOCKED);
+                incidentRepository.save(incident);
+                auditService.record(incidentId, "TOOL_DENIED", "POLICY_ENGINE", incident.getTraceId(), decision.reason());
+                return new ToolExecutionResponse(saved.getId(), incidentId, request.getTool(), saved.getStatus(), risk, decision.reason(), null, incident.getTraceId());
+            }
         }
 
         action.setStatus(ToolExecutionStatus.APPROVED);

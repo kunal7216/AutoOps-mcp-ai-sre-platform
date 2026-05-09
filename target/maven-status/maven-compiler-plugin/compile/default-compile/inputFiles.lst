@@ -40,6 +40,8 @@ C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\memory\Servi
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\repository\AuditLogRepository.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\repository\IncidentRepository.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\repository\RemediationActionRepository.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\safety\ApprovalWorkflowService.java
+C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\safety\ToolExecutionSafetyLayer.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\service\AuditService.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\service\IncidentService.java
 C:\Users\Asus\Downloads\autoops-mcp\src\main\java\com\kunal\autoops\service\PlannerService.java
