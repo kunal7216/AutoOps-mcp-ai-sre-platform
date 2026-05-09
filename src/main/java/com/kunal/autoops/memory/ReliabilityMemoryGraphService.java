@@ -46,5 +46,17 @@ public class ReliabilityMemoryGraphService {
 
     public Optional<ServiceNode> findServiceByName(String name) { return serviceRepo.findByServiceName(name); }
 
-    // TODO: implement findSimilarIncidents, findSuccessfulActionsForRootCause, calculateRiskFromHistoricalOutcomes, buildMemoryContextForPlanner
+    // TODO: implement findSimilarIncidents, findSuccessfulActionsForRootCause, calculateRiskFromHistoricalOutcomes
+
+    public String buildMemoryContextForPlanner(com.kunal.autoops.entity.Incident incident) {
+        // Minimal context: presence of a ServiceNode and counts of historical incidents
+        String serviceName = incident.getServiceName();
+        StringBuilder sb = new StringBuilder();
+        sb.append("service=").append(serviceName);
+        serviceRepo.findByServiceName(serviceName).ifPresent(s -> sb.append(";serviceId=").append(s.getId()));
+        long incidentCount = incidentRepo.findAll().stream().filter(i -> i.getServiceId() != null && i.getServiceId().equals(incident.getServiceId())).count();
+        sb.append(";historicalIncidents=").append(incidentCount);
+        return sb.toString();
+    }
 }
+
